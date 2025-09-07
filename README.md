@@ -72,6 +72,4 @@ These results establish strong baselines for Arabic WSD with open models.
 
 1. Clone the repository.  
 2. Install dependencies from `requirements.txt`.  
-3. Run zero-shot inference:
-   ```bash
-   python scripts/zero_shot_infer.py --model llama --dataset Datasets/A/test.json
+3. Run 
