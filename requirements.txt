@@ -5,7 +5,6 @@ unsloth
 datasets
 scikit-learn
 tqdm
-numpy
-pandas
+torch
 python-dotenv
 langchain_openai
