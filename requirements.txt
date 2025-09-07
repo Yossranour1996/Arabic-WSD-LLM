@@ -1,0 +1,12 @@
+# Minimal requirements for this repo (core only).
+# Install PyTorch separately from https://pytorch.org .
+
+transformers
+unsloth
+datasets
+scikit-learn
+tqdm
+numpy
+pandas
+python-dotenv
+langchain_openai
