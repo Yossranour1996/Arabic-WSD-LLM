@@ -13,7 +13,7 @@ HF_TOKEN = os.environ["HF_TOKEN"]
 HfFolder.save_token(HF_TOKEN)
 
 # ── 1. Model + LoRA setup (Unsloth style) ────────────────────────────────
-BASE_MODEL      = "meta-llama/Llama-3.1-8B"
+BASE_MODEL      = "unsloth/Llama-3.1-8B"
 MAX_SEQ_LEN     = 1024         # go larger if your GPU allows
 LOAD_IN_4BIT    = True          # memory-friendly
 DTYPE           = None          # auto-detect (fp16 on T4/V100, bf16 on A100+)
@@ -28,17 +28,18 @@ model, tokenizer = FastLanguageModel.from_pretrained(
 
 model = FastLanguageModel.get_peft_model(
     model,
-    r                       = 16,       # LoRA rank
+    r                       = 32,       # LoRA rank
     target_modules          = ["q_proj","k_proj","v_proj","o_proj",
                                "gate_proj","up_proj","down_proj"],
-    lora_alpha              = 16,
-    lora_dropout            = 0.0,
+    lora_alpha              =32,
+    lora_dropout            = 0.05,
     bias                    = "none",
     use_gradient_checkpointing = "unsloth",  # memory saver for long ctx
     random_state            = 3407,
     use_rslora              = False,
     loftq_config            = None,
 )
+
 
 # ── 2. Load & split JSONL ────────────────────────────────────────────────
 def load_jsonl(path):
@@ -87,16 +88,17 @@ print("🔎 Sample formatted text:\n", train_ds[0]["text"][:500], "...")
 # ── 4. TrainingArguments + SFTTrainer ────────────────────────────────────
 training_args = TrainingArguments(
     output_dir                 = "outputs_llama_elrazzaz",
-    per_device_train_batch_size= 2,
+    per_device_train_batch_size= 1,
+    per_device_eval_batch_size = 1,
     gradient_accumulation_steps= 8,
-    num_train_epochs           = 1,
+    num_train_epochs=3,
     warmup_steps               = 50,
     learning_rate              = 2e-4,
     fp16                       = not is_bfloat16_supported(),
     bf16                       = is_bfloat16_supported(),
-    logging_steps              = 10,
-    eval_strategy               = "steps",
-    eval_steps                 = 250,
+    logging_steps              = 20,
+    eval_strategy              = "steps",
+    eval_steps                 = 100,
     save_total_limit           = 2,
     optim                      = "adamw_8bit",
     weight_decay               = 0.01,
@@ -113,9 +115,10 @@ trainer = SFTTrainer(
     dataset_text_field  = "text",
     max_seq_length      = MAX_SEQ_LEN,
     dataset_num_proc    = 4,
-    packing             = False,   # turn on for many short examples
+    packing             = True,   # turn on for many short examples
     args                = training_args,
 )
+
 
 # ── 5. Train ─────────────────────────────────────────────────────────────
 trainer.train()
